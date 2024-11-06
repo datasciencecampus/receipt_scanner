@@ -68,6 +68,7 @@ Create a configuration file (e.g., `config.txt`) at the folder 'scannerai/_confi
    ```
 
 Rember to update config = Config("/path/to/your/config.txt") in 'scannerai/_config/config.py'
+There is an example of 'scannerai_config.txt' for your reference.
 
 ## Usage
 

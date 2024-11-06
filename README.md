@@ -67,6 +67,8 @@ Create a configuration file (e.g., `config.txt`) at the folder 'scannerai/_confi
    GOOGLE_CREDENTIALS_PATH=/path/to/your/google/credentials
    ```
 
+Rember to update config = Config("/path/to/your/config.txt") in 'scannerai/_config/config.py'
+
 ## Usage
 
 ### Starting the Application

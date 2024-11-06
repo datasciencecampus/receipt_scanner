@@ -1,0 +1,89 @@
+[project]
+name = "scannerai"
+description = "An AI-assisted tool for COICOP classification."
+authors = [
+    { name = "Data Science Campus", email = "datasciencecampus@ons.gov.uk" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+dynamic = ["version"]
+dependencies = [
+    # direct copy of ClassifAI for now
+    "pyprojroot==0.3.0",
+    "fastapi>=0.111.0",
+    "toml>=0.10.2",
+    "astroid>=2.3.3",
+    "chromadb==0.5.9",
+    "Click>=7.0",
+    "colorama>=0.4.3",
+    "fastapi>=0.111.0",
+    "google-generativeai>=0.7.0",
+    "google-cloud-secret-manager>=2.20.2",
+    "google-cloud-storage>=2.18.2",
+    "gunicorn>=20.0.4",
+    "h11>=0.9.0",
+    "isort>=4.3.21",
+    "ipykernel>=6.29.5",
+    "langchain-chroma>=0.1.4",
+    "langchain-community>=0.2.7",
+    "langchain-google-vertexai>=1.0.8",
+    "lazy-object-proxy>=1.4.3",
+    "mccabe>=0.6.1",
+    "pandas>=2.2.2",
+    "polars>=1.0.0",
+    "pydantic>=1.4",
+    "pylint>=2.4.4",
+    "python-dotenv>=1.0.1",
+    "python-multipart>=0.0.9",
+    "six>=1.14.0",
+    "starlette>=0.12.9",
+    "toml>=0.10.2",
+    "uvicorn>=0.11.2",
+    "websockets>=8.1",
+    "wrapt>=1.11.2",
+    "Flask>=3.0.3"
+]
+
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+# [tool.setuptools.packages.find]
+# where = ["src"]
+
+# [tool.setuptools.dynamic]
+# version = { attr = "scannerai.__version__" }
+
+# [tool.setuptools.package-data]
+# scannerai = ["_config/*.toml"]
+
+[project.optional-dependencies]
+test = [
+    "hypothesis>=6.98.6",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-randomly>=3.15.0",
+    "openpyxl>=3.1.5",
+    # "python-dateutil>=2.9.0",
+]
+dev = [
+    "pre-commit==3.3.3",
+    "ruff==0.3.0",
+    "scannerai[test]",
+]
+
+[tool.ruff]
+line-length = 79
+exclude = ["experiments/"]
+
+[tool.ruff.lint]
+extend-select = ["D", "I", "W"]
+ignore = ["D105", "D107", "D202"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["scannerai"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

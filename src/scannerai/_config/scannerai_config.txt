@@ -1,0 +1,20 @@
+# Debug and Processing Settings
+DEBUG_MODE=False
+ENABLE_PREPROCESSING=False
+SAVE_PROCESSED_IMAGE=False
+ENABLE_PRICE_COUNT=True
+
+# OCR Model Selection (1: Tesseract+GPT-3.5, 2: GPT-4-Vision, 3: Gemini)
+OCR_MODEL=3
+
+# Model Paths
+#The following two parameters should be generated during the training stage.
+CLASSIFIER_MODEL_PATH=/path/to/your/classifier.sav
+LABEL_ENCODER_PATH=/path/to/your/encoder.pkl
+
+# API Keys
+GEMINI_API_KEY_PATH=/path/to/your/gemini_key
+OPENAI_API_KEY_PATH=/path/to/your/openai_key
+
+# Google Cloud Settings (if using Gemini)
+GOOGLE_CREDENTIALS_PATH=/path/to/your/credentials.json

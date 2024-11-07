@@ -93,6 +93,10 @@ The application requires API keys for OCR services:
 
 Store API keys in separate files and update paths in the configuration.
 
+## Trained Model
+We put a trained model as an example in receipt_scanner/src/scannerai/classifiers/trainedModels/, where you can set LRCountVectorizer.sav for CLASSIFIER_MODEL_PATH and encoder.pkl for LABEL_ENCODER_PATH
+The above model is trained based on Logistic Regression (LR) using a popular feature extraction method, Countvectorizer implemented in Scikit-learn Python package.  
+
 ## Usage
 
 ### Starting the Application

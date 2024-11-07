@@ -67,8 +67,31 @@ Create a configuration file (e.g., `config.txt`) at the folder 'scannerai/_confi
    GOOGLE_CREDENTIALS_PATH=/path/to/your/google/credentials
    ```
 
-Rember to update config = Config("/path/to/your/config.txt") in 'scannerai/_config/config.py'
+Rember to update the path config = Config("/path/to/your/config.txt") in 'scannerai/_config/config.py'.
+
 There is an example of 'scannerai_config.txt' for your reference.
+
+Here is the descriptioin of the configuration parameters:
+
+- `DEBUG_MODE`: Enable/disable debug logging
+- `ENABLE_PREPROCESSING`: Enable/disable image preprocessing (not implemented at this moment, please set as False)
+- `SAVE_PROCESSED_IMAGE`: Save processed images
+- `ENABLE_PRICE_COUNT`: Enable token counting for API pricing
+- `OCR_MODEL`: Select OCR model
+- `CLASSIFIER_MODEL_PATH`: Path to trained classification model (if no trained model is available, please remove this parameter. The COICOP and confidence columns will display None)
+- `LABEL_ENCODER_PATH`: Path to label encoder (This should be generated together with the trained model. If not available, please remove this parameter.)
+- `GEMINI_API_KEY_PATH`: Path to Gemini API key file (only required if OCR_MODEL is set as 3)
+- `OPENAI_API_KEY_PATH`: Path to OpenAI API key file (only required if OCR_MODEL is set as 1 or 2)
+- `GOOGLE_CREDENTIALS_PATH`: Path to Google Cloud credentials (only required if OCR_MODEL is set as 3)
+
+## API Keys
+
+The application requires API keys for OCR services:
+- Gemini API key (optional if Google's Gemini is selected as OCR_MODEL)
+- OpenAI API key (optional if OpenAI API is selected as OCR_MODEL)
+- Google Cloud credentials (optional if Google's Gemini is selected as OCR_MODEL)
+
+Store API keys in separate files and update paths in the configuration.
 
 ## Usage
 
@@ -80,23 +103,12 @@ streamlit run scripts/lcf_receipt_entry_streamlit.py
 
 #### Basic Workflow
 
-1. Click "Open Folder" to select a directory containing receipt images/PDFs
-2. Review extracted data and classifications
-3. Edit items, prices, or classifications if needed
-4. Navigate between receipts using Previous/Next buttons
-5. Save processed data as JSON or CSV
-
-
-#### Features
-
-- **Add Items**: Manually add items to the receipt
-- **Edit Items**: Modify item details including name, price, and COICOP code
-- **Delete Items**: Remove incorrect or unwanted items
-- **Image Preview**: View receipt image with highlighted item locations
-- **Batch Processing**: Process multiple receipts with progress tracking
-- **Data Export**: Save processed data in JSON or CSV format
-
-
+1. Click "Browse files" to select receipt images/PDFs
+2. Click "Process Uploaded Files" to process the files
+3. Edit shop name, total amount, payment mode and items including item name, price, or COICOP if needed
+4. Add/delete items to the receipt if needed
+5. Navigate between receipts using Previous/Next buttons
+6. Save processed data in JSON or CSV format
 
 ### Process a single receipt
 Here is an example using Google's Gemini model to take image or pdf as input and output a dictionary of shop name, items and their prices, total amount and payment methods.
@@ -129,27 +141,7 @@ See `requirements.txt` for detailed dependencies.
 
 ## Configuration
 
-The application uses a configuration file with the following settings:
 
-- `DEBUG_MODE`: Enable/disable debug logging
-- `ENABLE_PREPROCESSING`: Enable/disable image preprocessing (not implemented at this moment)
-- `SAVE_PROCESSED_IMAGE`: Save processed images
-- `ENABLE_PRICE_COUNT`: Enable token counting for API pricing
-- `OCR_MODEL`: Select OCR model
-- `CLASSIFIER_MODEL_PATH`: Path to trained classification model
-- `LABEL_ENCODER_PATH`: Path to label encoder
-- `GEMINI_API_KEY_PATH`: Path to Gemini API key file
-- `OPENAI_API_KEY_PATH`: Path to OpenAI API key file
-- `GOOGLE_CREDENTIALS_PATH`: Path to Google Cloud credentials
-
-## API Keys
-
-The application requires API keys for OCR services:
-- Gemini API key (if Google's Gemini is selected as OCR_MODEL)
-- OpenAI API key (optional if OpenAI API is selected as OCR_MODEL)
-- Google Cloud credentials (for Gemini)
-
-Store API keys in separate files and update paths in the configuration.
 
 ### Pre-commit actions
 

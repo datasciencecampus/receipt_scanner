@@ -20,8 +20,8 @@ ScannerAI is a Python application that processes retail receipts using computer 
 
 **1. Clone the repository**
 ``` bash
-git clone https://github.com/yourusername/scannerAI.git
-cd scannerAI
+git clone https://github.com/datasciencecampus/receipt_scanner.git
+cd receipt_scanner
 ```
 
 **2. Set up virtual environment**
@@ -68,7 +68,7 @@ Create a configuration file (e.g., `config.txt`) at the folder 'scannerai/_confi
    GOOGLE_CREDENTIALS_PATH=/path/to/your/google/credentials
    ```
 
-Rember to update the path config = Config("/path/to/your/config.txt") in 'scannerai/_config/config.py'.
+**Rember to update the path config = Config("/path/to/your/config.txt") in 'scannerai/_config/config.py'.**
 
 There is an example of 'scannerai_config.txt' for your reference.
 

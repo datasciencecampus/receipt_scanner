@@ -18,13 +18,14 @@ class lcf_classifier:
 
         self.classifier = None
         self.labelCoder = None
+        self.InitSuccess = False  # Initialize InitSuccess to False
 
         if (
             trainedmodel is None
             or not os.path.exists(trainedmodel)
             or not os.path.isfile(trainedmodel)
         ):
-            print(f"WARNING: the trained model {trainedmodel} does not exist")
+            print(f"WARNING: the trained model does not exist!")
         else:
             self.classifier = joblib.load(trainedmodel)
             print(f"trained model {trainedmodel} loaded successfully!")
@@ -34,10 +35,18 @@ class lcf_classifier:
             or not os.path.exists(labelcoder)
             or not os.path.isfile(labelcoder)
         ):
-            print(f"WARNING: {labelcoder} does not exist!")
+            print(f"WARNING: label coder does not exist!")
         else:
             with open(labelcoder, "rb") as f:
                 self.labelCoder = pickle.load(f)
+
+        # Set InitSuccess to True only if both classifier and labelCoder are loaded
+        if self.classifier is not None and self.labelCoder is not None:
+            self.InitSuccess = True
+
+    def get_InitSuccess(self):
+        """Return the initialization status."""
+        return self.InitSuccess
 
     def predict_dataframe(self, feature_df):
         """
@@ -46,7 +55,7 @@ class lcf_classifier:
         :param feature_df: DataFrame containing the features for classification
         :return: DataFrame with predicted labels and probabilities
         """
-        if self.classifier is None:
+        if not self.get_InitSuccess():
             return None
 
         print("Processing DataFrame input:\n", feature_df)
@@ -81,7 +90,8 @@ class lcf_classifier:
         :param item_desc: String containing the text description for classification
         :return: tuple (predicted_label, probability)
         """
-        if self.classifier is None:
+
+        if not self.get_InitSuccess():
             return None, None
 
         # print("Processing string input:", item_desc)

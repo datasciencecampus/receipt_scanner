@@ -8,7 +8,6 @@ import os
 from openai import OpenAI
 from PIL import Image
 
-from scannerai._config.config import config
 from scannerai.utils.scanner_utils import (
     count_tokens_openai,
     estimate_image_tokens_openai,
@@ -20,13 +19,20 @@ from scannerai.utils.scanner_utils import (
 class LCFReceiptProcessGPT4Vision:
     """Class to extract text from image using OpenAI ChatGPT4 vision API."""
 
-    def __init__(self):
+    def __init__(self, openai_api_key_path):
         """Initialize Openai API with credentials."""
 
-        if not config.openai_api_key_path:
-            raise ValueError("ChatGPT API key not found in configuration")
+        self.InitSuccess = False  # Initialize to False
 
-        openai_api_key = read_api_key(config.openai_api_key_path)
+        self.client = None
+
+        if not openai_api_key_path or not os.path.exists(openai_api_key_path):
+            print(
+                f"WARNING: ChatGPT API key not found or file does not exist: {openai_api_key_path}"
+            )
+            return
+
+        openai_api_key = read_api_key(openai_api_key_path)
         # Initialize OpenAI client
         self.client = OpenAI(api_key=openai_api_key)
 
@@ -46,6 +52,11 @@ class LCFReceiptProcessGPT4Vision:
             "    'payment_mode': 'card'\n"
             "}"
         )
+        self.InitSuccess = True
+
+    def get_InitSuccess(self):
+        """Return the initialization status."""
+        return self.InitSuccess
 
     @staticmethod
     def encode_image(image):
@@ -83,7 +94,7 @@ class LCFReceiptProcessGPT4Vision:
                 )
         return token_count, token_text, token_image
 
-    def process_receipt(self, image_path):
+    def process_receipt(self, image_path, enable_price_count=False):
         """Process receipt."""
         file_extension = os.path.splitext(image_path)[1].lower()
         if file_extension in [".jpg", ".jpeg", ".png"]:
@@ -99,54 +110,55 @@ class LCFReceiptProcessGPT4Vision:
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
 
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": self.prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{base64_image}"
+        receipt_data = {
+            "shop_name": None,
+            "payment_mode": None,
+            "items": [],  # or None, depending on how you want to handle it
+            "receipt_pathfile": image_path,
+        }
+
+        if self.get_InitSuccess():
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": self.prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            },
                         },
-                    },
-                ],
-            }
-        ]
+                    ],
+                }
+            ]
 
-        max_tokens = 1000
-
-        response = self.client.chat.completions.create(
-            model="gpt-4o-mini", messages=messages, max_tokens=max_tokens
-        )
-        receipt_info = response.choices[0].message.content
-        # print(receipt_info)
-        if response.choices[0].finish_reason == "length":
-            print(
-                "ERROR: THE RESULTS EXCEEDED the max_token, so be partically cut off!"
+            max_tokens = 1000
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini", messages=messages, max_tokens=max_tokens
             )
-            return None
+            receipt_info = response.choices[0].message.content
 
-        lpos = 0
-        lpos = receipt_info.find("{")
-        receipt_info = receipt_info[lpos:]
-        # print('receipt_info:\n', receipt_info)
+            if response.choices[0].finish_reason == "length":
+                print(
+                    "ERROR: THE RESULTS EXCEEDED the max_token, so be partically cut off!"
+                )
+            else:
+                lpos = 0
+                lpos = receipt_info.find("{")
+                receipt_info = receipt_info[lpos:]
+                rpos = receipt_info.rfind("}")
+                receipt_info = receipt_info[: rpos + 1]
 
-        rpos = receipt_info.rfind("}")
-        receipt_info = receipt_info[: rpos + 1]
-        # print('receipt_info:\n', receipt_info)
-
-        receipt_data = (
-            json.loads(receipt_info)
-            if isinstance(receipt_info, str)
-            else receipt_info
-        )
-
-        # receipt_data = ast.literal_eval(receipt_info) if isinstance(receipt_info, str) else receipt_info
+                receipt_data = (
+                    json.loads(receipt_info)
+                    if isinstance(receipt_info, str)
+                    else receipt_info
+                )
 
         receipt_data["receipt_pathfile"] = image_path
 
-        if config.enable_price_count:
+        if enable_price_count:
             width, height = image.size
             input_tokens, input_tokens_text, input_tokens_image = (
                 self.estimate_vision_tokens(messages, width, height)

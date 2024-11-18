@@ -20,6 +20,9 @@ st.set_page_config(
 
 def classify_items(receipt_data, classifier, description_dict):
     """Classify items in receipt data using the LCF classifier."""
+    if receipt_data is None or classifier is None:
+        return receipt_data
+    
     for item in receipt_data["items"]:
         itemDesc = item["name"]
         result, prob = classifier.predict(itemDesc)
@@ -33,14 +36,7 @@ def classify_items(receipt_data, classifier, description_dict):
 
 def process_image(image_path, ocr_processor, classifier_processor, description_dictionary):
     """Process a single receipt image."""
-    # Process receipt using OCR
-    receipt_data = ocr_processor.process_receipt(image_path)
-    if receipt_data is None:
-        return None
-
-    # Classify items
-    receipt_data = classify_items(receipt_data, classifier_processor, description_dictionary)
-
+    
     # Read the image
     if image_path.lower().endswith((".png", ".jpg", ".jpeg")):
         original_image = cv2.imread(image_path)
@@ -48,6 +44,22 @@ def process_image(image_path, ocr_processor, classifier_processor, description_d
     elif image_path.lower().endswith(".pdf"):
         original_image = merge_pdf_pages(image_path)
         original_image = np.array(original_image)
+    
+    receipt_data = {
+        "shop_name": None,
+        "payment_mode": None,
+        "total_amount": None,
+        "items": [],  # or None, depending on how you want to handle it
+        "receipt_pathfile": image_path,
+    }
+    
+    # Process receipt using OCR
+    if ocr_processor:
+        receipt_data = ocr_processor.process_receipt(image_path)
+    
+    # Classify items
+    if classifier_processor:
+        receipt_data = classify_items(receipt_data, classifier_processor, description_dictionary)
 
     return {"image": original_image, "receipt_data": receipt_data}
 
@@ -83,8 +95,10 @@ def save_to_csv(results, file_path):
 
 def update_code_descriptions(df, coicop_dict):
     """Update COICOP descriptions based on codes."""
-    df = df.copy()
-    df['code_desc'] = df['code'].astype(str).map(lambda x: coicop_dict.get(str(x), ""))
+    
+    if not df.empty:
+       df = df.copy()
+       df['code_desc'] = df['code'].astype(str).map(lambda x: coicop_dict.get(str(x), ""))
     return df
 
 
@@ -106,33 +120,42 @@ def initialize_session_state():
     # initialise OCR processor and text classifier
     # Initialize OCR processor based on config
     if "ocr_processor" not in st.session_state:
+        st.session_state.ocr_processor = None
+
         if config.ocr_model == 1:
-            from scannerai.ocr.lcf_receipt_process_openai import (
-                LCFReceiptProcessOpenai as OCRProcessor,
-                )
-
-            st.sidebar.info("Using OpenAI OCR Model")
+            from scannerai.ocr.lcf_receipt_process_openai import LCFReceiptProcessOpenai
+            st.session_state.ocr_processor  = LCFReceiptProcessOpenai(config.open_api_key_path)
+            if st.session_state.ocr_processor.get_InitSuccess():
+                st.sidebar.info("Using OpenAI OCR Model")
+            else:
+                st.error("OCR processor initialization failed.")
+            
         elif config.ocr_model == 2:
-            from scannerai.ocr.lcf_receipt_process_gpt4vision import (
-                LCFReceiptProcessGPT4Vision as OCRProcessor,
-                )
-            st.sidebar.info("Using GPT-4 Vision OCR Model")
+            from scannerai.ocr.lcf_receipt_process_gpt4vision import LCFReceiptProcessGPT4Vision
+            st.session_state.ocr_processor  = LCFReceiptProcessGPT4Vision(config.openai_api_key_path)
+            if st.session_state.ocr_processor.get_InitSuccess():
+                st.sidebar.info("Using GPT-4 Vision OCR Model")
+            else:
+                st.error("OCR processor initialization failed.")
+            
         elif config.ocr_model == 3:
-            from scannerai.ocr.lcf_receipt_process_gemini import (
-                LCFReceiptProcessGemini as OCRProcessor,
-                )
-            st.sidebar.info("Using Gemini OCR Model")
+            from scannerai.ocr.lcf_receipt_process_gemini import LCFReceiptProcessGemini 
+            st.session_state.ocr_processor  = LCFReceiptProcessGemini(config.google_credentials_path, config.gemini_api_key_path)
+            if st.session_state.ocr_processor.get_InitSuccess():
+                st.sidebar.info("Using Gemini OCR Model")
+            else:
+                st.error("OCR processor initialization failed.")
+                
         else:
-            st.error("Error: No OCR Model is set!")
-            st.stop()
-
-        st.session_state.ocr_processor = OCRProcessor()
+            st.error("WARNING: No OCR Model is set!")
         
     # load text classifier
     if "lcf_classifier" not in st.session_state:
         st.session_state.lcf_classifier = lcf_classifier(
         config.classifier_model_path, config.label_encoder_path)
-
+        if not st.session_state.lcf_classifier.get_InitSuccess():
+            st.error("LCF classifier initialization failed.")
+            
     # load COICOP description data
     if "coicop_dict" not in st.session_state:
         ROOT_DIR = os.path.abspath(os.curdir)

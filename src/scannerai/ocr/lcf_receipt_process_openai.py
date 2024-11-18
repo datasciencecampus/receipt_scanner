@@ -10,7 +10,6 @@ import pandas as pd
 import pytesseract
 from openai import OpenAI
 
-from scannerai._config.config import config
 from scannerai.utils.scanner_utils import (
     count_tokens_openai,
     merge_pdf_pages,
@@ -21,15 +20,26 @@ from scannerai.utils.scanner_utils import (
 class LCFReceiptProcessOpenai:
     """class to extract text from image using OpenAI API."""
 
-    def __init__(self):
+    def __init__(self, openai_api_key_path):
         """Initialize Openai API with credentials."""
 
-        if not config.openai_api_key_path:
-            raise ValueError("ChatGPT API key not found in configuration")
+        self.InitSuccess = False  # Initialize to False
+        self.client = None  # Initialize to None
 
-        openai_api_key = read_api_key(config.openai_api_key_path)
+        if not openai_api_key_path or not os.path.exists(openai_api_key_path):
+            print(
+                f"WARNING: ChatGPT API key not found or file does not exist: {openai_api_key_path}"
+            )
+            return
+
+        openai_api_key = read_api_key(openai_api_key_path)
         # Initialize OpenAI client
         self.client = OpenAI(api_key=openai_api_key)
+        self.InitSuccess = True
+
+    def get_InitSuccess(self):
+        """Return the initialization status."""
+        return self.InitSuccess
 
     def estimate_tokens(self, messages):
         """Estimate token counts."""
@@ -48,7 +58,7 @@ class LCFReceiptProcessOpenai:
         return token_count
 
     # Function to call OpenAI API and format the receipt information
-    def extract_receipt_with_chatgpt(self, ocr_text):
+    def extract_receipt_with_chatgpt(self, ocr_text, enable_price_count=False):
         """To call OpenAI API and format the receipt information."""
         prompt = (
             "Here is the OCR text from a receipt:\n"
@@ -82,10 +92,8 @@ class LCFReceiptProcessOpenai:
         # Extract the response text
         # Print the response
         receipt_info = response.choices[0].message.content
-        if config.debug_mode:
-            print(receipt_info)
 
-        if config.enable_price_count:
+        if enable_price_count:
             input_tokens = self.estimate_tokens(messages)
             output_tokens = count_tokens_openai("gpt-3.5-turbo", receipt_info)
             total_tokens = input_tokens + output_tokens
@@ -191,7 +199,7 @@ class LCFReceiptProcessOpenai:
 
         return outputs_df
 
-    def process_receipt(self, image_path):
+    def process_receipt(self, image_path, enable_price_count=False):
         """To extract structured data from input image."""
         # Load image
         file_extension = os.path.splitext(image_path)[1].lower()
@@ -213,24 +221,30 @@ class LCFReceiptProcessOpenai:
             print(f"Error: Unable to read image at {image_path}")
             return None
 
+        receipt_data = {
+            "shop_name": None,
+            "payment_mode": None,
+            "items": [],  # or None, depending on how you want to handle it
+            "receipt_pathfile": image_path,
+        }
+
+        if not self.get_InitSuccess():
+            return receipt_data
+
         # pre-processing image
-        if config.enable_price_count:
+        if enable_price_count:
             # processed_image = preprocess_image(image)
             # TO ADD...
             processed_image = image
         else:
             processed_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        if config.debug_mode:
-            cv2.imshow(f"pre-processed_image {image_path}", processed_image)
-            cv2.waitKey(0)
-
         ocr_text = pytesseract.image_to_string(processed_image)
-        if config.debug_mode:
-            print("--- ocr_text---\n", ocr_text)
 
         # Call the function
-        receipt_info = self.extract_receipt_with_chatgpt(ocr_text)
+        receipt_info = self.extract_receipt_with_chatgpt(
+            ocr_text, enable_price_count
+        )
         print(receipt_info)
         # Parse the receipt_info
         # receipt_data = parse_receipt_info(receipt_info)
